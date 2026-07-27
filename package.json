@@ -1,0 +1,36 @@
+{
+  "name": "neaven-destiny",
+  "version": "1.0.0",
+  "description": "Destiny 2 companion app for Windows",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "electron:build": "npm run build && electron-builder"
+  },
+  "author": "nxc38",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "1.18.1",
+    "electron-store": "11.0.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-router-dom": "7.18.1",
+    "zustand": "5.0.14"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.17",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.4",
+    "autoprefixer": "10.5.4",
+    "concurrently": "10.0.4",
+    "electron": "43.2.0",
+    "electron-builder": "26.15.3",
+    "postcss": "8.5.23",
+    "tailwindcss": "3.4.19",
+    "typescript": "7.0.2",
+    "vite": "8.1.5",
+    "vite-plugin-electron": "1.1.0"
+  }
+}

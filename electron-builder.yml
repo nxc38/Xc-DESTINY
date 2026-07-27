@@ -1,0 +1,22 @@
+appId: com.neaven.destiny
+productName: Neaven-DESTINY
+directories:
+  output: dist-release
+files:
+  - dist
+  - dist-electron
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: resources/icon.ico
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+protocols:
+  name: Neaven-DESTINY OAuth
+  schemes:
+    - neavendestiny
