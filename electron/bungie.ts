@@ -86,3 +86,123 @@ export async function getProfile(
   )
   return res.data.Response
 }
+
+// ---- Activity History ----
+
+export interface DestinyHistoricalStatsValue {
+  statId: string
+  basic: {
+    value: number
+    displayValue: string
+  }
+}
+
+export interface DestinyHistoricalStatsPeriodGroup {
+  period: string
+  activityDetails: {
+    referenceId: number
+    instanceId: string
+    mode: number
+    modes: number[]
+    directorActivityHash: number
+    isPrivate: boolean
+    membershipType: number
+  }
+  values: Record<string, DestinyHistoricalStatsValue>
+}
+
+export interface DestinyActivityHistoryResults {
+  activities: DestinyHistoricalStatsPeriodGroup[]
+}
+
+export async function getActivityHistory(
+  membershipType: number,
+  membershipId: string,
+  characterId: string,
+  count: number = 20,
+  mode: number = 0
+): Promise<DestinyActivityHistoryResults> {
+  const res = await api.get(
+    `/Destiny2/${membershipType}/Account/${membershipId}/Character/${characterId}/Stats/Activities/`,
+    { params: { count, mode } }
+  )
+  return res.data.Response
+}
+
+// ---- Activity Definition Manifest ----
+
+export interface DestinyActivityDefinition {
+  displayProperties: {
+    name: string
+    description: string
+    icon: string
+    hasIcon: boolean
+  }
+  pgcrImage: string
+  activityTypeHash: number
+  activityModeTypes: number[]
+  isPvP: boolean
+  placeHash: number
+  destinationHash: number
+}
+
+const activityManifestCache = new Map<string, DestinyActivityDefinition>()
+
+export async function getManifestActivity(
+  hash: number,
+  locale: string = 'en'
+): Promise<DestinyActivityDefinition | null> {
+  const cacheKey = `${locale}:${hash}`
+  if (activityManifestCache.has(cacheKey)) {
+    return activityManifestCache.get(cacheKey)!
+  }
+  try {
+    const res = await api.get(
+      `/Destiny2/Manifest/DestinyActivityDefinition/${hash}/`,
+      { params: { lc: locale } }
+    )
+    const def = res.data.Response as DestinyActivityDefinition
+    activityManifestCache.set(cacheKey, def)
+    return def
+  } catch (err) {
+    console.error(`[Manifest] Failed to fetch activity ${hash}:`, err)
+    return null
+  }
+}
+
+// ---- Account/Character Stats ----
+
+export interface DestinyStatsPeriodGroup {
+  allTime: Record<string, DestinyHistoricalStatsValue>
+  allTimeScore: Record<string, DestinyHistoricalStatsValue>
+  results: Record<string, Record<string, DestinyHistoricalStatsValue>>
+}
+
+export interface DestinyAccountStats {
+  mergedAllCharacters: {
+    merged: DestinyStatsPeriodGroup
+    results: { allTime: Record<string, DestinyHistoricalStatsValue> }
+  }
+  characters: {
+    characterId: string
+    merged: DestinyStatsPeriodGroup
+    results: { allTime: Record<string, DestinyHistoricalStatsValue> }
+  }[]
+}
+
+export async function getAccountStats(
+  membershipType: number,
+  membershipId: string,
+  modes?: number[]
+): Promise<DestinyAccountStats> {
+  const params: Record<string, string> = {}
+  if (modes && modes.length > 0) {
+    params.modes = modes.join(',')
+  }
+  const res = await api.get(
+    `/Destiny2/${membershipType}/Account/${membershipId}/Stats/`,
+    { params }
+  )
+  return res.data.Response
+}
+

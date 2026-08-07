@@ -4,8 +4,9 @@ import { useAuthStore } from '../store/authStore'
 import { setAccessToken } from '../services/bungie'
 import Sidebar from '../components/Sidebar'
 import ContentArea from '../components/ContentArea'
+import DeathwatchEngine from '../components/DeathwatchEngine'
 
-export type NavSection = 'guardian' | 'inventory' | 'vault' | 'vendors' | 'settings'
+export type NavSection = 'guardian' | 'activities' | 'stats' | 'dim' | 'deathwatch' | 'settings'
 
 export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState<NavSection>('guardian')
@@ -33,6 +34,7 @@ export default function DashboardPage() {
         onLogout={handleLogout}
       />
       <ContentArea activeSection={activeSection} />
+      <DeathwatchEngine />
     </div>
   )
 }

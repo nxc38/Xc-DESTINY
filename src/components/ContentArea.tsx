@@ -1,16 +1,23 @@
 import { useEffect, useState } from 'react'
-import { TitanIcon, HunterIcon, WarlockIcon, InventoryIcon, VaultIcon, VendorIcon, SettingsIcon, SwordIcon, GhostIcon } from './DestinyIcon'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n'
+import { TitanIcon, HunterIcon, WarlockIcon, InventoryIcon, SettingsIcon, SwordIcon, GhostIcon, ActivityIcon, StatsIcon, DeathIcon } from './DestinyIcon'
 import { useAuthStore } from '../store/authStore'
 import {
   getDestinyMemberships,
   getProfile,
   resolveBungieUrl,
   setAccessToken,
+  getAccessToken,
   CLASS_NAMES,
   type DestinyMembership,
   type DestinyCharacter,
 } from '../services/bungie'
 import type { NavSection } from '../pages/DashboardPage'
+import ActivitiesSection from './ActivitiesSection'
+import StatsSection from './StatsSection'
+import DeathwatchSection from './DeathwatchSection'
 
 interface ContentAreaProps {
   activeSection: NavSection
@@ -34,51 +41,9 @@ const CLASS_ICONS: Record<number, React.ReactNode> = {
   2: <WarlockIcon className="w-6 h-6" />,
 }
 
-const sectionConfig: Record<NavSection, {
-  title: string
-  subtitle: string
-  icon: React.ReactNode
-  accentColor: string
-  description: string
-}> = {
-  guardian: {
-    title: 'Guardian',
-    subtitle: 'Characters & Loadouts',
-    icon: <TitanIcon className="w-12 h-12" />,
-    accentColor: '#C73E3A',
-    description: 'Select your character and manage equipment loadouts.',
-  },
-  inventory: {
-    title: 'Inventory',
-    subtitle: 'Character Inventory',
-    icon: <InventoryIcon className="w-12 h-12" />,
-    accentColor: '#7C3AED',
-    description: 'Browse and manage your character inventory and equipped gear.',
-  },
-  vault: {
-    title: 'Vault',
-    subtitle: 'Item Storage',
-    icon: <VaultIcon className="w-12 h-12" />,
-    accentColor: '#7C3AED',
-    description: 'Access your vault to store and retrieve items across all characters.',
-  },
-  vendors: {
-    title: 'Vendors',
-    subtitle: 'Tower & Beyond',
-    icon: <VendorIcon className="w-12 h-12" />,
-    accentColor: '#F59E0B',
-    description: 'Check vendor inventories, bounties, and reputation progress.',
-  },
-  settings: {
-    title: 'Settings',
-    subtitle: 'Configuration',
-    icon: <SettingsIcon className="w-12 h-12" />,
-    accentColor: '#A78BFA',
-    description: 'Configure application preferences and account settings.',
-  },
-}
 
 function GuardianSection() {
+  const { t } = useTranslation()
   const { membershipId, accessToken } = useAuthStore()
   const [data, setData] = useState<CharacterData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -88,7 +53,7 @@ function GuardianSection() {
   useEffect(() => {
     if (!membershipId || !accessToken) {
       setLoading(false)
-      setError('Not authenticated. Please log in again.')
+      setError(t('guardian.notAuth'))
       return
     }
 
@@ -114,7 +79,7 @@ function GuardianSection() {
 
         if (!memberships.destinyMemberships?.length) {
           if (!cancelled) {
-            setError('No Destiny 2 characters found on this account. Have you played Destiny 2?')
+            setError(t('guardian.noDestiny'))
             setLoading(false)
           }
           return
@@ -153,7 +118,7 @@ function GuardianSection() {
         }
       } catch (err: any) {
         if (!cancelled) {
-          const msg = err?.message || 'Failed to load character data'
+          const msg = err?.message || t('guardian.failed')
           setError(msg)
           setLoading(false)
         }
@@ -174,7 +139,7 @@ function GuardianSection() {
             <div className="absolute inset-0 rounded-full bg-destiny-primary/20 blur-xl animate-pulse" />
             <GhostIcon className="relative w-10 h-10 text-destiny-primary-light animate-pulse" />
           </div>
-          <p className="text-destiny-primary-light/50 text-sm tracking-wider">Loading character data...</p>
+          <p className="text-destiny-primary-light/50 text-sm tracking-wider">{t('guardian.loading')}</p>
         </div>
       </div>
     )
@@ -191,7 +156,7 @@ function GuardianSection() {
                      text-white border border-destiny-primary-light/20
                      transition-all duration-200"
         >
-          Retry
+          {t('guardian.retry')}
         </button>
       </div>
     )
@@ -208,13 +173,13 @@ function GuardianSection() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-white">
-              {data?.membership.bungieGlobalDisplayName || 'Guardian'}
+              {data?.membership.bungieGlobalDisplayName || t('sidebar.guardian')}
               <span className="text-destiny-primary-light/40 font-normal">
                 #{data?.membership.bungieGlobalDisplayNameCode}
               </span>
             </h3>
             <p className="text-xs text-destiny-primary-light/50 mt-0.5">
-              {data?.characters.length || 0} character{(data?.characters.length || 0) !== 1 ? 's' : ''} ·{' '}
+              {data?.characters.length || 0} {t('guardian.characters')} ·{' '}
               {data?.membership.displayName}
             </p>
           </div>
@@ -225,7 +190,7 @@ function GuardianSection() {
       {data && data.characters.length > 0 && (
         <div>
           <h4 className="text-[11px] text-destiny-primary-light/40 uppercase tracking-widest mb-3">
-            Characters
+            {t('guardian.characters')}
           </h4>
           <div className="grid gap-3">
             {data.characters.map((char) => (
@@ -237,14 +202,26 @@ function GuardianSection() {
 
       {data && data.characters.length === 0 && (
         <div className="text-center py-10">
-          <p className="text-white/30 text-sm">No characters found</p>
+          <p className="text-white/30 text-sm">{t('guardian.noCharacters')}</p>
         </div>
       )}
     </div>
   )
 }
 
+const RACE_HASHES: Record<number, string> = {
+  3884724749: 'raceHuman',
+  2809578934: 'raceAwoken',
+  898834093: 'raceExo',
+}
+
+const GENDER_HASHES: Record<number, string> = {
+  2204441813: 'male',
+  3111576190: 'female',
+}
+
 function CharacterCard({ character }: { character: DestinyCharacter }) {
+  const { t } = useTranslation()
   const classType = character.classType
   const accentColor = CLASS_ACCENT_COLORS[classType] || '#7C3AED'
   const className = CLASS_NAMES[classType] || 'Unknown'
@@ -253,132 +230,466 @@ function CharacterCard({ character }: { character: DestinyCharacter }) {
     : null
   const lastPlayed = new Date(character.dateLastPlayed)
   const daysAgo = Math.floor((Date.now() - lastPlayed.getTime()) / (1000 * 60 * 60 * 24))
+  const hoursPlayed = Math.floor(Number(character.minutesPlayedTotal) / 60)
+  const raceKey = RACE_HASHES[character.raceHash]
+  const genderKey = GENDER_HASHES[character.genderHash]
+  const raceGender = raceKey || genderKey
+    ? [raceKey && t(`guardian.${raceKey}`), genderKey && t(`guardian.${genderKey}`)]
+        .filter(Boolean)
+        .join(' · ')
+    : ''
 
   return (
     <div
-      className="flex items-center gap-4 p-4 rounded-xl bg-destiny-surface/40 border border-white/[0.04]
-                 hover:border-white/[0.08] transition-all duration-200"
+      className="flex overflow-hidden border h-28 transition-all duration-200"
+      style={{ borderColor: `${accentColor}35` }}
     >
-      {/* Emblem */}
-      <div
-        className="w-14 h-14 rounded-lg flex-shrink-0 bg-cover bg-center relative overflow-hidden"
-        style={emblemUrl ? { backgroundImage: `url(${emblemUrl})` } : { backgroundColor: '#1A1A2E' }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-        {/* Class icon overlay */}
-        <div className="absolute bottom-0.5 right-0.5 text-white/80">
+      {/* Info block — solid dark background */}
+      <div className="w-1/4 min-w-[270px] flex items-center gap-4 px-5 flex-shrink-0 bg-[#0E0E20]">
+        <div
+          className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+          style={{
+            backgroundColor: `${accentColor}22`,
+            border: `1px solid ${accentColor}45`,
+            color: accentColor,
+          }}
+        >
           {CLASS_ICONS[classType]}
         </div>
-      </div>
 
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <h4 className="text-sm font-semibold text-white">{className}</h4>
-          <span
-            className="text-[10px] px-1.5 py-0.5 rounded-full"
-            style={{ backgroundColor: `${accentColor}20`, color: accentColor }}
-          >
-            {character.light}
-          </span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2.5 whitespace-nowrap">
+            <h4 className="text-base font-bold text-white truncate">{className}</h4>
+            <span
+              className="text-[10px] px-2 py-0.5 rounded-full font-semibold flex-shrink-0"
+              style={{ backgroundColor: `${accentColor}25`, color: accentColor }}
+            >
+              ✦ {character.light} {t('guardian.power')}
+            </span>
+          </div>
+          {raceGender && (
+            <p className="text-[12px] text-white/60 mt-1">{raceGender}</p>
+          )}
+          <p className="text-[11px] text-white/40 mt-0.5">
+            {daysAgo === 0 ? t('guardian.today') : daysAgo === 1 ? t('guardian.yesterday') : t('guardian.daysAgo', { days: daysAgo })}
+            {' · '}
+            {t('guardian.hoursPlayed', { hours: hoursPlayed })}
+          </p>
         </div>
-        <p className="text-[11px] text-white/30 mt-0.5">
-          {daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : `${daysAgo}d ago`}
-          {' · '}
-          {Math.floor(Number(character.minutesPlayedTotal) / 60)}h played
-        </p>
       </div>
 
-      {/* Select arrow */}
-      <div className="text-white/15 text-lg">→</div>
+      {/* Emblem art — full long-strip emblem flush against the right edge */}
+      <div className="flex-1 relative bg-[#0E0E20]">
+        {emblemUrl ? (
+          <div
+            className="absolute inset-0 bg-no-repeat"
+            style={{
+              backgroundImage: `url(${emblemUrl})`,
+              backgroundSize: 'contain',
+              backgroundPosition: 'right center',
+            }}
+          />
+        ) : (
+          <div className="absolute inset-0" style={{ backgroundColor: '#1A1A2E' }} />
+        )}
+      </div>
     </div>
   )
 }
 
-export default function ContentArea({ activeSection }: ContentAreaProps) {
-  if (activeSection === 'guardian') {
-    return (
-      <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A16]">
-        <header className="h-14 border-b border-destiny-primary/10 flex items-center px-6 bg-[#0E0E20]/80 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="text-destiny-gold/80">
-              <SwordIcon className="w-4 h-4" />
-            </div>
-            <div>
-              <h2 className="text-[15px] font-semibold text-white leading-tight">Guardian</h2>
-              <p className="text-[10px] text-destiny-primary-light/40">Characters & Loadouts</p>
-            </div>
-          </div>
-        </header>
-        <div className="flex-1 overflow-y-auto">
-          <GuardianSection />
-        </div>
-        <footer className="h-7 border-t border-destiny-primary/10 bg-[#0E0E20]/80 flex items-center justify-between px-6">
-          <div className="flex items-center gap-3 text-[10px] text-white/25">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500/50 shadow-[0_0_4px_rgba(34,197,94,0.3)]" />
-              API Connected
-            </span>
-          </div>
-          <span className="text-[10px] text-white/15">v1.0.0</span>
-        </footer>
-      </main>
-    )
+interface TokenInfo {
+  accessToken: string
+  refreshToken: string
+  membershipId: string
+  displayName: string
+  expiresAt: number
+}
+
+function SettingsSection() {
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { displayName, membershipId, clearAuth } = useAuthStore()
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null)
+  const [clearMsg, setClearMsg] = useState('')
+  const [expiryText, setExpiryText] = useState('')
+
+  useEffect(() => {
+    window.electronAPI.getAuthTokens().then(setTokenInfo)
+  }, [])
+
+  useEffect(() => {
+    if (!tokenInfo) return
+    const update = () => {
+      const remaining = tokenInfo.expiresAt - Date.now()
+      if (remaining <= 0) {
+        setExpiryText(t('settings.expired'))
+      } else if (remaining < 60000) {
+        setExpiryText(t('settings.expiresInSeconds', { sec: Math.floor(remaining / 1000) }))
+      } else {
+        setExpiryText(t('settings.expiresIn', { time: `${Math.floor(remaining / 60000)}m` }))
+      }
+    }
+    update()
+    const interval = setInterval(update, 10000)
+    return () => clearInterval(interval)
+  }, [tokenInfo])
+
+  const handleClearData = async () => {
+    setClearMsg('')
+    try {
+      await window.electronAPI.clearAuthTokens()
+      setAccessToken(null)
+      clearAuth()
+      setTokenInfo(null)
+      setClearMsg(t('settings.cleared'))
+      setTimeout(() => navigate('/', { replace: true }), 800)
+    } catch {
+      setClearMsg(t('settings.clearFailed'))
+      setTimeout(() => setClearMsg(''), 3000)
+    }
   }
 
-  const section = sectionConfig[activeSection]
+  const handleSignOut = async () => {
+    await window.electronAPI.clearAuthTokens()
+    setAccessToken(null)
+    clearAuth()
+    navigate('/', { replace: true })
+  }
+
+  const isTokenValid = tokenInfo && Date.now() < tokenInfo.expiresAt - 60000
+  const tokenExpiryDate = tokenInfo ? new Date(tokenInfo.expiresAt) : null
 
   return (
-    <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A16]">
-      <header className="h-14 border-b border-destiny-primary/10 flex items-center px-6 bg-[#0E0E20]/80 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="text-destiny-gold/80">
-            <SwordIcon className="w-4 h-4" />
-          </div>
-          <div>
-            <h2 className="text-[15px] font-semibold text-white leading-tight">{section.title}</h2>
-            <p className="text-[10px] text-destiny-primary-light/40">{section.subtitle}</p>
-          </div>
+    <div className="p-6 space-y-5">
+      {/* Account card */}
+      <div className="rounded-xl bg-destiny-surface/60 border border-destiny-primary/10 overflow-hidden">
+        <div className="px-5 py-3 border-b border-destiny-primary/8 flex items-center gap-2.5">
+          <SettingsIcon className="w-4 h-4 text-destiny-primary-light/60" />
+          <h3 className="text-[13px] font-semibold text-white tracking-wide">{t('settings.account')}</h3>
         </div>
-      </header>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="flex-1 flex items-center justify-center py-20">
-          <div className="flex flex-col items-center gap-5 max-w-xs text-center">
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full blur-xl opacity-20"
-                   style={{ backgroundColor: section.accentColor }} />
-              <div className="relative text-white/15">
-                {section.icon}
-              </div>
+        <div className="p-5 space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-destiny-primary/15 border border-destiny-primary/20 flex items-center justify-center">
+              <GhostIcon className="w-5 h-5 text-destiny-primary-light" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-white/60 mb-1.5">
-                {section.title}
-              </h3>
-              <p className="text-[13px] text-white/25 leading-relaxed">
-                {section.description}
+              <p className="text-sm font-semibold text-white">{displayName || t('sidebar.guardian')}</p>
+              <p className="text-[11px] text-destiny-primary-light/40">
+                {t('settings.membershipId')}: {membershipId || '—'}
               </p>
             </div>
-            <div className="flex items-center gap-2.5 px-4 py-2 rounded-full
-                            bg-white/[0.02] border border-white/[0.04]">
-              <div className="w-1.5 h-1.5 rounded-full bg-destiny-gold/70 animate-glow-pulse" />
-              <span className="text-[11px] text-white/25">Coming soon</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg bg-[#0A0A16]/60 border border-white/[0.04]">
+              <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{t('settings.accessToken')}</p>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${isTokenValid ? 'bg-green-400 shadow-[0_0_4px_rgba(74,222,128,0.4)]' : 'bg-red-400 shadow-[0_0_4px_rgba(248,113,113,0.4)]'}`} />
+                <span className="text-xs text-white/60">{isTokenValid ? t('settings.active') : t('settings.expired')}</span>
+              </div>
+            </div>
+            <div className="p-3 rounded-lg bg-[#0A0A16]/60 border border-white/[0.04]">
+              <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1">{t('settings.expiry')}</p>
+              <p className="text-xs text-white/60">
+                {tokenExpiryDate
+                  ? tokenExpiryDate.toLocaleTimeString()
+                  : '—'}
+              </p>
+              <p className="text-[10px] text-white/25">{expiryText}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <footer className="h-7 border-t border-destiny-primary/10 bg-[#0E0E20]/80
-                         flex items-center justify-between px-6">
-        <div className="flex items-center gap-3 text-[10px] text-white/25">
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500/50 shadow-[0_0_4px_rgba(34,197,94,0.3)]" />
-            API Ready
-          </span>
+      {/* Session card */}
+      <div className="rounded-xl bg-destiny-surface/60 border border-destiny-primary/10 overflow-hidden">
+        <div className="px-5 py-3 border-b border-destiny-primary/8 flex items-center gap-2.5">
+          <SwordIcon className="w-4 h-4 text-destiny-primary-light/60" />
+          <h3 className="text-[13px] font-semibold text-white tracking-wide">{t('settings.session')}</h3>
         </div>
-        <span className="text-[10px] text-white/15">v1.0.0</span>
-      </footer>
-    </main>
+        <div className="p-5 space-y-3">
+          <div className="space-y-2">
+            {[
+              { label: t('settings.displayName'), value: displayName || '—' },
+              { label: t('settings.membershipId'), value: membershipId || '—' },
+              { label: t('settings.refreshToken'), value: tokenInfo?.refreshToken ? t('settings.available') : t('settings.none') },
+              { label: t('settings.apiEndpoint'), value: 'www.bungie.net/Platform' },
+            ].map(({ label, value }) => (
+              <div key={label} className="flex items-center justify-between py-1.5 border-b border-white/[0.03] last:border-0">
+                <span className="text-[12px] text-white/40">{label}</span>
+                <span className="text-[12px] text-white/70 font-mono text-right max-w-[55%] truncate">{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="rounded-xl bg-destiny-surface/60 border border-destiny-primary/10 overflow-hidden">
+        <div className="px-5 py-3 border-b border-destiny-primary/8 flex items-center gap-2.5">
+          <SwordIcon className="w-4 h-4 text-destiny-primary-light/60" />
+          <h3 className="text-[13px] font-semibold text-white tracking-wide">{t('settings.actions')}</h3>
+        </div>
+        <div className="p-5 space-y-3">
+          <button
+            onClick={handleClearData}
+            className="w-full text-left px-4 py-3 rounded-lg bg-[#0A0A16]/60 border border-white/[0.04]
+                       hover:border-yellow-500/20 transition-all duration-200 group"
+          >
+            <p className="text-[13px] text-white/80 group-hover:text-white">{t('settings.clearLoginData')}</p>
+            <p className="text-[11px] text-white/30 mt-0.5">{t('settings.clearLoginDataDesc')}</p>
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="w-full text-left px-4 py-3 rounded-lg bg-[#0A0A16]/60 border border-white/[0.04]
+                       hover:border-red-500/20 transition-all duration-200 group"
+          >
+            <p className="text-[13px] text-white/80 group-hover:text-red-400">{t('settings.signOut')}</p>
+            <p className="text-[11px] text-white/30 mt-0.5">{t('settings.signOutDesc')}</p>
+          </button>
+          {clearMsg && (
+            <p className="text-center text-[11px] text-destiny-primary-light/50">{clearMsg}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Language */}
+      <div className="rounded-xl bg-destiny-surface/60 border border-destiny-primary/10 overflow-hidden">
+        <div className="px-5 py-3 border-b border-destiny-primary/8 flex items-center gap-2.5">
+          <SettingsIcon className="w-4 h-4 text-destiny-primary-light/60" />
+          <h3 className="text-[13px] font-semibold text-white tracking-wide">{t('settings.language')}</h3>
+        </div>
+        <div className="p-5">
+          <div className="flex gap-2">
+            <button
+              onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('lang', 'en') }}
+              className={`flex-1 px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-200 border
+                ${i18n.language === 'en'
+                  ? 'bg-destiny-primary/20 border-destiny-primary-light/30 text-white shadow-[0_0_12px_-3px_rgba(124,58,237,0.3)]'
+                  : 'bg-[#0A0A16]/60 border-white/[0.04] text-white/50 hover:text-white/80 hover:border-white/[0.08]'
+                }`}
+            >
+              {t('settings.english')}
+            </button>
+            <button
+              onClick={() => { i18n.changeLanguage('zh'); localStorage.setItem('lang', 'zh') }}
+              className={`flex-1 px-4 py-2.5 rounded-lg text-[12px] font-medium transition-all duration-200 border
+                ${i18n.language === 'zh'
+                  ? 'bg-destiny-primary/20 border-destiny-primary-light/30 text-white shadow-[0_0_12px_-3px_rgba(124,58,237,0.3)]'
+                  : 'bg-[#0A0A16]/60 border-white/[0.04] text-white/50 hover:text-white/80 hover:border-white/[0.08]'
+                }`}
+            >
+              {t('settings.chinese')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* About */}
+      <div className="rounded-xl bg-destiny-surface/60 border border-destiny-primary/10 overflow-hidden">
+        <div className="px-5 py-3 border-b border-destiny-primary/8 flex items-center gap-2.5">
+          <SettingsIcon className="w-4 h-4 text-destiny-primary-light/60" />
+          <h3 className="text-[13px] font-semibold text-white tracking-wide">{t('settings.about')}</h3>
+        </div>
+        <div className="p-5 space-y-2">
+          {[
+            { label: t('settings.version'), value: '1.0.0' },
+            { label: t('settings.electron'), value: '43.2.0' },
+            { label: t('settings.react'), value: '19.2.8' },
+            { label: t('settings.bungieApi'), value: 'v2' },
+          ].map(({ label, value }) => (
+            <div key={value} className="flex items-center justify-between py-1.5 border-b border-white/[0.03] last:border-0">
+              <span className="text-[12px] text-white/40">{label}</span>
+              <span className="text-[12px] text-white/50">{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
+}
+
+function ContentHeader({ icon, title, subtitle }: { icon: React.ReactNode; title: string; subtitle: string }) {
+  return (
+    <header className="h-14 border-b border-destiny-primary/10 flex items-center px-6 bg-[#0E0E20]/80 backdrop-blur-sm">
+      <div className="flex items-center gap-3">
+        {icon}
+        <div>
+          <h2 className="text-[15px] font-semibold text-white leading-tight">{title}</h2>
+          <p className="text-[10px] text-destiny-primary-light/40">{subtitle}</p>
+        </div>
+      </div>
+    </header>
+  )
+}
+
+function ContentFooter({ status }: { status: string }) {
+  return (
+    <footer className="h-7 border-t border-destiny-primary/10 bg-[#0E0E20]/80 flex items-center justify-between px-6">
+      <div className="flex items-center gap-3 text-[10px] text-white/25">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-green-500/50 shadow-[0_0_4px_rgba(34,197,94,0.3)]" />
+          {status}
+        </span>
+      </div>
+      <span className="text-[10px] text-white/15">v1.0.0</span>
+    </footer>
+  )
+}
+
+export default function ContentArea({ activeSection }: ContentAreaProps) {
+  const { t } = useTranslation()
+  const [dimVisited, setDimVisited] = useState(false)
+
+  // Mount the DIM webview on first visit, then keep it alive (hidden) so its state survives tab switches
+  useEffect(() => {
+    if (activeSection === 'dim') setDimVisited(true)
+  }, [activeSection])
+
+  const showDim = dimVisited || activeSection === 'dim'
+
+  const renderSection = (): React.ReactNode => {
+    if (activeSection === 'guardian') {
+      return (
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A16]">
+          <ContentHeader
+            icon={<div className="text-destiny-gold/80"><SwordIcon className="w-4 h-4" /></div>}
+            title={t('guardian.title')}
+            subtitle={t('guardian.subtitle')}
+          />
+          <div className="flex-1 overflow-y-auto">
+            <GuardianSection />
+          </div>
+          <ContentFooter status={t('common.apiConnected')} />
+        </main>
+      )
+    }
+
+    if (activeSection === 'settings') {
+      return (
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A16]">
+          <ContentHeader
+            icon={<div className="text-destiny-primary-light/80"><SettingsIcon className="w-4 h-4" /></div>}
+            title={t('settings.title')}
+            subtitle={t('settings.subtitle')}
+          />
+          <div className="flex-1 overflow-y-auto">
+            <SettingsSection />
+          </div>
+          <ContentFooter status={t('common.apiReady')} />
+        </main>
+      )
+    }
+
+    if (activeSection === 'activities') {
+      return (
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A16]">
+          <ContentHeader
+            icon={<div className="text-destiny-gold/80"><ActivityIcon className="w-4 h-4" /></div>}
+            title={t('activities.title')}
+            subtitle={t('activities.subtitle')}
+          />
+          <ActivitiesSection />
+          <ContentFooter status={t('common.apiConnected')} />
+        </main>
+      )
+    }
+
+    if (activeSection === 'stats') {
+      return (
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A16]">
+          <ContentHeader
+            icon={<div className="text-destiny-gold/80"><StatsIcon className="w-4 h-4" /></div>}
+            title={t('stats.title')}
+            subtitle={t('stats.subtitle')}
+          />
+          <StatsSection />
+          <ContentFooter status={t('common.apiConnected')} />
+        </main>
+      )
+    }
+
+    if (activeSection === 'deathwatch') {
+      return (
+        <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A16]">
+          <ContentHeader
+            icon={<div className="text-red-400/80"><DeathIcon className="w-4 h-4" /></div>}
+            title={t('deathwatch.title')}
+            subtitle={t('deathwatch.subtitle')}
+          />
+          <div className="flex-1 overflow-y-auto">
+            <DeathwatchSection />
+          </div>
+          <ContentFooter status={t('common.apiConnected')} />
+        </main>
+      )
+    }
+
+    const sectionIcons: Record<string, React.ReactNode> = {
+    }
+    const sectionColors: Record<string, string> = {
+    }
+    const section = {
+      title: t(`${activeSection as string}.title`),
+      subtitle: t(`${activeSection as string}.subtitle`),
+      description: t(`${activeSection as string}.description`),
+      icon: <InventoryIcon className="w-12 h-12" />,
+      accentColor: '#7C3AED',
+    }
+
+    return (
+      <main className="flex-1 flex flex-col overflow-hidden bg-[#0A0A16]">
+        <ContentHeader
+          icon={<div className="text-destiny-gold/80"><SwordIcon className="w-4 h-4" /></div>}
+          title={section.title}
+          subtitle={section.subtitle}
+        />
+
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-5 max-w-xs text-center">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full blur-xl opacity-20"
+                     style={{ backgroundColor: section.accentColor }} />
+                <div className="relative text-white/15">
+                  {section.icon}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white/60 mb-1.5">
+                  {section.title}
+                </h3>
+                <p className="text-[13px] text-white/25 leading-relaxed">
+                  {section.description}
+                </p>
+              </div>
+              <div className="flex items-center gap-2.5 px-4 py-2 rounded-full
+                              bg-white/[0.02] border border-white/[0.04]">
+                <div className="w-1.5 h-1.5 rounded-full bg-destiny-gold/70 animate-glow-pulse" />
+                <span className="text-[11px] text-white/25">{t('common.comingSoon')}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ContentFooter status={t('common.apiReady')} />
+      </main>
+    )
+  }
+
+  if (showDim) {
+    return (
+      <div className="flex-1 flex min-w-0 min-h-0">
+        {activeSection !== 'dim' && renderSection()}
+        <div className={`flex-1 min-w-0 min-h-0 ${activeSection === 'dim' ? 'flex' : 'hidden'}`}>
+          <webview
+            src="https://app.destinyitemmanager.com"
+            partition="persist:dim"
+            className="w-full h-full"
+          />
+        </div>
+      </div>
+    )
+  }
+
+  return renderSection()
 }

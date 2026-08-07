@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '../store/authStore'
 import { setAccessToken, getAccessToken } from '../services/bungie'
 import { DestinyTricorn, GhostIcon } from '../components/DestinyIcon'
@@ -54,6 +55,7 @@ function FloatingParticles() {
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { isAuthenticated, setAuth } = useAuthStore()
   const [isChecking, setIsChecking] = useState(true)
@@ -126,7 +128,7 @@ export default function LoginPage() {
     try {
       await window.electronAPI.openBungieAuth()
     } catch {
-      setError('Failed to open login page. Please try again.')
+      setError(t('login.openFailed'))
       setIsLoggingIn(false)
       if (loginTimerRef.current) {
         clearTimeout(loginTimerRef.current)
@@ -141,10 +143,10 @@ export default function LoginPage() {
       await window.electronAPI.clearAuthTokens()
       setAccessToken(null)
       useAuthStore.getState().clearAuth()
-      setClearMsg('Login data cleared.')
+      setClearMsg(t('login.cleared'))
       setTimeout(() => setClearMsg(''), 3000)
     } catch {
-      setClearMsg('Failed to clear data.')
+      setClearMsg(t('login.clearFailed'))
       setTimeout(() => setClearMsg(''), 3000)
     }
   }
@@ -152,11 +154,11 @@ export default function LoginPage() {
   const handleManualSubmit = async () => {
     const trimmed = manualUrl.trim()
     if (!trimmed) {
-      setError('Please paste the OAuth callback URL from your browser.')
+      setError(t('login.pastePrompt'))
       return
     }
     if (!trimmed.startsWith('neavendestiny://')) {
-      setError('Invalid URL. Must start with neavendestiny://')
+      setError(t('login.invalidUrl'))
       return
     }
     setManualSubmitting(true)
@@ -179,7 +181,7 @@ export default function LoginPage() {
             <GhostIcon className="relative w-12 h-12 text-destiny-primary-light animate-pulse" />
           </div>
           <p className="text-destiny-primary-light/60 text-sm tracking-widest uppercase">
-            Initializing
+            {t('login.initializing')}
           </p>
         </div>
       </div>
@@ -235,7 +237,7 @@ export default function LoginPage() {
 
               {/* Subtitle */}
               <p className="text-destiny-primary-light/50 text-[13px] tracking-[0.2em] uppercase mb-8">
-                Destiny 2 Companion
+                {t('app.subtitle')}
               </p>
             </div>
 
@@ -263,12 +265,12 @@ export default function LoginPage() {
                 {isLoggingIn ? (
                   <>
                     <GhostIcon className="w-5 h-5 animate-spin" />
-                    <span>Opening Bungie.net...</span>
+                    <span>{t('login.opening')}</span>
                   </>
                 ) : (
                   <>
                     <DestinyTricorn className="w-[18px] h-[18px]" />
-                    <span>Login with Bungie.net</span>
+                    <span>{t('login.title')}</span>
                   </>
                 )}
               </div>
@@ -286,14 +288,12 @@ export default function LoginPage() {
                            hover:text-destiny-primary-light/70 transition-colors
                            w-full text-center"
               >
-                {showManualEntry ? 'Hide manual entry' : 'Trouble logging in? Manual entry'}
+                {showManualEntry ? t('login.hideManualEntry') : t('login.manualEntry')}
               </button>
               {showManualEntry && (
                 <div className="mt-3 space-y-2">
                   <p className="text-destiny-primary-light/30 text-[11px] leading-relaxed">
-                    If the browser redirect doesn't open the app, copy the full URL<br />
-                    (<code className="text-destiny-primary-light/50 text-[10px]">neavendestiny://oauth/callback?code=...</code>)
-                    from your browser's address bar and paste it below.
+                    {t('login.manualHint')}
                   </p>
                   <div className="flex gap-2">
                     <input
@@ -301,7 +301,7 @@ export default function LoginPage() {
                       value={manualUrl}
                       onChange={(e) => setManualUrl(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleManualSubmit()}
-                      placeholder="neavendestiny://oauth/callback?code=..."
+                      placeholder={t('login.manualPlaceholder')}
                       disabled={manualSubmitting}
                       className="flex-1 bg-[#0A0A16] border border-destiny-primary/20 rounded-md
                                  px-3 py-2 text-white text-[12px]
@@ -318,7 +318,7 @@ export default function LoginPage() {
                                  disabled:opacity-30 disabled:cursor-not-allowed
                                  transition-all duration-200"
                     >
-                      {manualSubmitting ? '...' : 'Submit'}
+                      {manualSubmitting ? '...' : t('login.submit')}
                     </button>
                   </div>
                 </div>
@@ -332,7 +332,7 @@ export default function LoginPage() {
                 className="text-destiny-primary-light/25 text-[11px] tracking-wider
                            hover:text-red-400/60 transition-colors duration-200"
               >
-                Clear login data
+                {t('login.clearData')}
               </button>
               {clearMsg && (
                 <p className="mt-1 text-destiny-primary-light/40 text-[10px]">{clearMsg}</p>
@@ -341,7 +341,7 @@ export default function LoginPage() {
 
             {/* Footer hint */}
             <p className="mt-6 text-destiny-primary-light/30 text-[12px] text-center leading-relaxed">
-              You will be redirected to Bungie.net<br />to authorize this application
+              {t('login.redirectHint')}
             </p>
           </div>
         </div>

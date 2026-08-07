@@ -6,7 +6,8 @@ import {
   clearTokens,
   buildAuthUrl,
 } from './oauth'
-import { getDestinyMemberships, getProfile } from './bungie'
+import { getDestinyMemberships, getProfile, getActivityHistory, getManifestActivity, getAccountStats } from './bungie'
+import { initDeathwatch, registerDeathwatchIpc } from './deathwatch'
 import { existsSync } from 'fs'
 
 const PROTOCOL = 'neavendestiny'
@@ -30,6 +31,10 @@ function createWindow() {
       preload: join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      // Enable <webview> tag for the embedded DIM web app
+      webviewTag: true,
+      // Keep timers alive while minimized so the deathwatch capture loop keeps running
+      backgroundThrottling: false,
     },
   })
 
@@ -85,6 +90,8 @@ app.on('open-url', (_event, url) => {
 
 app.whenReady().then(() => {
   createWindow()
+  initDeathwatch()
+  registerDeathwatchIpc()
 
   // Process protocol URL that was in argv at cold-start (app was NOT running)
   if (pendingProtocolUrl) {
@@ -133,6 +140,23 @@ app.whenReady().then(() => {
   ) => {
     return getProfile(membershipType, membershipId, components)
   })
+
+  ipcMain.handle('bungie:get-activity-history', async (
+    _event, membershipType: number, membershipId: string, characterId: string, count?: number, mode?: number
+  ) => {
+    return getActivityHistory(membershipType, membershipId, characterId, count, mode)
+  })
+
+  ipcMain.handle('bungie:get-manifest-activity', async (_event, hash: number, locale?: string) => {
+    return getManifestActivity(hash, locale)
+  })
+
+  ipcMain.handle('bungie:get-account-stats', async (
+    _event, membershipType: number, membershipId: string, modes?: number[]
+  ) => {
+    return getAccountStats(membershipType, membershipId, modes)
+  })
+
 })
 
 app.on('window-all-closed', () => {

@@ -1,4 +1,5 @@
-import { DestinyTricorn, InventoryIcon, VaultIcon, VendorIcon, SettingsIcon, GhostIcon } from './DestinyIcon'
+import { useTranslation } from 'react-i18next'
+import { DestinyTricorn, InventoryIcon, SettingsIcon, GhostIcon, ActivityIcon, StatsIcon, DIMIcon, DeathIcon } from './DestinyIcon'
 import type { NavSection } from '../pages/DashboardPage'
 
 interface SidebarProps {
@@ -14,15 +15,18 @@ interface NavItem {
   icon: React.ReactNode
 }
 
-const navItems: NavItem[] = [
-  { id: 'guardian', label: 'Guardian', icon: <InventoryIcon className="w-[18px] h-[18px]" /> },
-  { id: 'inventory', label: 'Inventory', icon: <InventoryIcon className="w-[18px] h-[18px]" /> },
-  { id: 'vault', label: 'Vault', icon: <VaultIcon className="w-[18px] h-[18px]" /> },
-  { id: 'vendors', label: 'Vendors', icon: <VendorIcon className="w-[18px] h-[18px]" /> },
-  { id: 'settings', label: 'Settings', icon: <SettingsIcon className="w-[18px] h-[18px]" /> },
-]
-
 export default function Sidebar({ activeSection, onSelectSection, displayName, onLogout }: SidebarProps) {
+  const { t } = useTranslation()
+
+  const navItems: NavItem[] = [
+    { id: 'guardian', label: t('sidebar.guardian'), icon: <InventoryIcon className="w-[18px] h-[18px]" /> },
+    { id: 'activities', label: t('sidebar.activities'), icon: <ActivityIcon className="w-[18px] h-[18px]" /> },
+    { id: 'stats', label: t('sidebar.stats'), icon: <StatsIcon className="w-[18px] h-[18px]" /> },
+    { id: 'dim', label: t('sidebar.dim'), icon: <DIMIcon className="w-[18px] h-[18px]" /> },
+    { id: 'deathwatch', label: t('sidebar.deathwatch'), icon: <DeathIcon className="w-[18px] h-[18px]" /> },
+    { id: 'settings', label: t('sidebar.settings'), icon: <SettingsIcon className="w-[18px] h-[18px]" /> },
+  ]
+
   return (
     <aside className="w-60 h-full bg-[#0E0E20] border-r border-destiny-primary/10 flex flex-col select-none">
       {/* App brand */}
@@ -75,7 +79,7 @@ export default function Sidebar({ activeSection, onSelectSection, displayName, o
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[12px] text-white/90 truncate leading-tight">{displayName}</p>
-            <p className="text-[10px] text-destiny-primary-light/40">Guardian</p>
+            <p className="text-[10px] text-destiny-primary-light/40">{t('sidebar.guardian')}</p>
           </div>
         </div>
         <button
@@ -83,7 +87,7 @@ export default function Sidebar({ activeSection, onSelectSection, displayName, o
           className="w-full text-[11px] text-white/25 hover:text-red-400/80
                      transition-colors duration-200 py-1.5 rounded-md hover:bg-red-400/5"
         >
-          Sign Out
+          {t('sidebar.signOut')}
         </button>
       </div>
     </aside>
